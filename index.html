@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IMF Gadget Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        max-width: 600px;
+      }
+      h1 {
+        text-align: center;
+      }
+      .hidden {
+        display: none;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      button {
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .gadget-list {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>IMF Gadget Management</h1>
+
+    <div id="auth-section">
+      <h2>Register</h2>
+      <div class="form-group">
+        <label for="register-email">Email:</label>
+        <input type="email" id="register-email" required />
+      </div>
+      <div class="form-group">
+        <label for="register-password">Password:</label>
+        <input type="password" id="register-password" required />
+      </div>
+      <button onclick="register()">Register</button>
+
+      <h2>Login</h2>
+      <div class="form-group">
+        <label for="login-email">Email:</label>
+        <input type="email" id="login-email" required />
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password:</label>
+        <input type="password" id="login-password" required />
+      </div>
+      <button onclick="login()">Login</button>
+    </div>
+
+    <div id="message" class="hidden"></div>
+
+    <div id="gadget-section" class="hidden">
+      <h2>Add Gadget</h2>
+      <div class="form-group">
+        <label for="gadget-name">Gadget Name:</label>
+        <input type="text" id="gadget-name" required />
+      </div>
+      <button onclick="addGadget()">Add Gadget</button>
+
+      <h2>Filter Gadgets</h2>
+      <div class="form-group">
+        <label for="gadget-status">Select Status:</label>
+        <select id="gadget-status" onchange="fetchGadgets()">
+          <option value="">All</option>
+          <option value="Available">Available</option>
+          <option value="Deployed">Deployed</option>
+          <option value="Decommissioned">Decommissioned</option>
+          <option value="Destroyed">Destroyed</option>
+        </select>
+      </div>
+
+      <h2>Gadget List</h2>
+      <table id="gadget-table" class="gadget-list">
+        <thead>
+          <tr>
+            <th>Gadget Name</th>
+            <th>Status</th>
+            <th>Success Probability</th>
+          </tr>
+        </thead>
+        <tbody id="gadget-list"></tbody>
+      </table>
+    </div>
+
+    <script>
+      const API_URL = "http://localhost:3000/api"; // Update with your API URL
+
+      async function register() {
+        const email = document.getElementById("register-email").value;
+        const password = document.getElementById("register-password").value;
+
+        const messageDiv = document.getElementById("message");
+        messageDiv.classList.remove("hidden");
+        messageDiv.textContent = "Loading...";
+
+        const response = await fetch(`${API_URL}/auth/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        messageDiv.classList.add("hidden");
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          messageDiv.textContent = `Error: ${errorData.message}`;
+          messageDiv.classList.remove("hidden");
+          return;
+        }
+
+        const data = await response.json();
+        alert(data.message);
+      }
+
+      async function login() {
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
+
+        const messageDiv = document.getElementById("message");
+        messageDiv.classList.remove("hidden");
+        messageDiv.textContent = "Loading...";
+
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        messageDiv.classList.add("hidden");
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          messageDiv.textContent = `Error: ${errorData.message}`;
+          messageDiv.classList.remove("hidden");
+          return;
+        }
+
+        const data = await response.json();
+        alert(data.message);
+        if (response.ok) {
+          document.getElementById("auth-section").classList.add("hidden");
+          document.getElementById("gadget-section").classList.remove("hidden");
+          fetchGadgets(); // Fetch all gadgets on login
+        }
+      }
+
+      async function addGadget() {
+        const name = document.getElementById("gadget-name").value;
+
+        const messageDiv = document.getElementById("message");
+        messageDiv.classList.remove("hidden");
+        messageDiv.textContent = "Loading...";
+
+        const response = await fetch(`${API_URL}/gadgets`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name }),
+        });
+
+        messageDiv.classList.add("hidden");
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          messageDiv.textContent = `Error: ${errorData.message}`;
+          messageDiv.classList.remove("hidden");
+          return;
+        }
+
+        const data = await response.json();
+        alert(data.message);
+        fetchGadgets(); // Refresh the gadget list after adding
+      }
+
+      async function fetchGadgets() {
+        const status = document.getElementById("gadget-status").value;
+        const url = status
+          ? `${API_URL}/gadgets?status=${status}`
+          : `${API_URL}/gadgets`;
+
+        const messageDiv = document.getElementById("message");
+        messageDiv.classList.remove("hidden");
+        messageDiv.textContent = "Loading...";
+
+        if (
+          document.getElementById("gadget-section").classList.contains("hidden")
+        ) {
+          alert("Please log in to view gadgets.");
+          return; // Exit if not logged in
+        }
+
+        const response = await fetch(url);
+        messageDiv.classList.add("hidden");
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          messageDiv.textContent = `Error: ${errorData.message}`;
+          messageDiv.classList.remove("hidden");
+          return;
+        }
+
+        const gadgets = await response.json();
+        const gadgetList = document.getElementById("gadget-list");
+        gadgetList.innerHTML = ""; // Clear existing list
+
+        gadgets.forEach((gadget) => {
+          const gadgetItem = document.createElement("tr"); // Create a table row
+          gadgetItem.innerHTML = `
+            <td>${gadget.name}</td>
+            <td>${gadget.status}</td>
+            <td>${gadget.successProbability}%</td>
+          `;
+          gadgetList.appendChild(gadgetItem); // Append the row to the table body
+        });
+      }
+    </script>
+  </body>
+</html>
