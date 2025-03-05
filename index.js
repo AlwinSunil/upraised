@@ -8,6 +8,7 @@ import cors from "cors";
 
 import authRoutes from "./routes/auth.js";
 import gadgetRoutes from "./routes/gadgets.js";
+import { setupSwagger } from "./swagger.js";
 
 export const prisma = new PrismaClient();
 
@@ -17,6 +18,8 @@ app.use(cors());
 
 app.use(express.json());
 app.use(cookieParser());
+
+setupSwagger(app);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/gadgets", gadgetRoutes);
